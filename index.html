@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pakka — Speak it. Clarify it. Confirm it. Prove what changed.</title>
+  <meta name="description" content="Turn informal work promises into clear, reviewable agreements with a tamper-evident SHA-256 hash history.">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Persistent Demo Disclaimer -->
+  <aside class="disclaimer-banner" role="alert">
+    <span>⚠️ <strong>Demo Recordkeeping Only:</strong> Not legal advice, identity verification, escrow, payment processing, or blockchain.</span>
+  </aside>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="nav-container">
+      <div class="brand-group">
+        <div class="brand-logo" aria-hidden="true">PK</div>
+        <div>
+          <h1 class="brand-title">Pakka</h1>
+          <p class="brand-tagline">Speak it. Clarify it. Confirm it. Prove what changed.</p>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <button id="btnNewAgreement" class="btn btn-primary" title="Create a new agreement">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+          New Agreement
+        </button>
+        <button id="btnLoadSamples" class="btn btn-secondary" title="Load sample freelance scenarios">
+          Load Samples
+        </button>
+        <button id="btnResetDemo" class="btn btn-danger btn-sm" title="Clear and reset demo storage">
+          Reset Demo
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Dashboard -->
+  <main class="app-main">
+    <div class="dashboard-grid">
+
+      <!-- Left Sidebar: Agreements List -->
+      <section class="card" aria-label="Agreements List">
+        <div class="card-header">
+          <h2 class="card-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Agreements (<span id="agreementsCount">0</span>)
+          </h2>
+          <span class="badge badge-draft" id="activeFilterBadge">All</span>
+        </div>
+        <div class="card-body" style="padding: 12px;">
+          <div id="agreementsList" class="agreements-list">
+            <!-- Dynamic agreement items render here -->
+          </div>
+          <div id="agreementsEmptyState" style="text-align: center; padding: 32px 16px; color: var(--text-muted); display: none;">
+            <p style="font-size: 0.9rem; margin-bottom: 12px;">No agreements found.</p>
+            <button id="btnCreateFirst" class="btn btn-primary btn-sm">Create an Agreement</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Column: Selected Agreement Workspace -->
+      <section class="detail-container" id="detailWorkspace" aria-label="Agreement Workspace">
+
+        <!-- Selected Agreement Header -->
+        <div class="card agreement-header-card">
+          <div class="card-header">
+            <div>
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+                <h2 id="viewAgreementTitle" style="font-size: 1.25rem; font-weight: 700; color: #fff;">Poster Design for Rahul</h2>
+                <span id="viewStatusBadge" class="badge badge-active">Active</span>
+              </div>
+              <div style="font-size: 0.8rem; color: var(--text-muted);">
+                ID: <span id="viewAgreementId" style="font-family: var(--font-mono);">ag_1234</span> &bull; Created: <span id="viewCreatedAt">Oct 26, 2026</span>
+              </div>
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button id="btnOpenProofFile" class="btn btn-secondary btn-sm" title="Open formal Proof File view">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>
+                Proof File
+              </button>
+              <button id="btnExportJson" class="btn btn-secondary btn-sm" title="Export agreement & events as JSON">
+                Export JSON
+              </button>
+              <button id="btnDisputeToggle" class="btn btn-danger btn-sm" title="Flag deal in dispute">
+                Flag Dispute
+              </button>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <!-- Missing Terms Warning (Visible when Draft has incomplete terms) -->
+            <div id="missingTermsWarningBox" class="missing-terms-box" style="display: none;">
+              <div class="missing-terms-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                Missing or Incomplete Terms (Must be resolved before activation)
+              </div>
+              <div id="missingTermsList" class="missing-terms-list">
+                <!-- Missing terms pills go here -->
+              </div>
+            </div>
+
+            <!-- Structured Terms Display -->
+            <div class="hero-terms-grid">
+              <div>
+                <div class="term-field-label">Client</div>
+                <div id="viewClientName" class="term-field-value">Rahul Sharma</div>
+              </div>
+              <div>
+                <div class="term-field-label">Freelancer / Worker</div>
+                <div id="viewWorkerName" class="term-field-value">Aman Verma</div>
+              </div>
+              <div>
+                <div class="term-field-label">Agreed Amount</div>
+                <div class="term-amount-highlight" id="viewAmount">₹4,000</div>
+              </div>
+              <div>
+                <div class="term-field-label">Target Due Date</div>
+                <div id="viewDueDate" class="term-field-value">2026-10-30</div>
+              </div>
+            </div>
+
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border-subtle); display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div>
+                <div class="term-field-label">Deliverables</div>
+                <p id="viewDeliverables" class="term-field-value" style="font-size: 0.875rem; white-space: pre-wrap;">20 print-ready promotional posters for tech festival (PDF & PNG format)</p>
+              </div>
+              <div>
+                <div class="term-field-label">Acceptance Criteria</div>
+                <p id="viewAcceptanceCriteria" class="term-field-value" style="font-size: 0.875rem; white-space: pre-wrap;">High-resolution 300 DPI exports, 1 round of revisions included, client signs off on final colors.</p>
+              </div>
+            </div>
+
+            <div style="margin-top: 12px;">
+              <div class="term-field-label">Payment Terms</div>
+              <p id="viewPaymentTerms" class="term-field-value" style="font-size: 0.875rem;">50% advance before printing, 50% upon final acceptance.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulated Party Confirmation & Role Switching -->
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              Dual-Party Confirmation Simulation
+            </h3>
+          </div>
+          <div class="card-body">
+            <!-- Simulated Role Selector Bar -->
+            <div class="simulation-bar">
+              <div class="simulation-info">
+                <div class="simulation-title">
+                  <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#60a5fa;"></span>
+                  Active Simulation Persona
+                </div>
+                <div class="simulation-note">Switch persona to simulate independent confirmation and check-in actions.</div>
+              </div>
+              <div class="role-pills" role="radiogroup" aria-label="Demo Persona Switcher">
+                <button type="button" class="role-btn active" id="roleBtnClient">Client (<span id="roleLabelClient">Client</span>)</button>
+                <button type="button" class="role-btn" id="roleBtnWorker">Worker (<span id="roleLabelWorker">Worker</span>)</button>
+              </div>
+            </div>
+
+            <!-- Confirmation Status Cards -->
+            <div class="confirm-status-grid">
+              <div class="party-confirm-card" id="cardConfirmClient">
+                <div class="party-confirm-header">
+                  <span class="party-label" id="confirmCardClientLabel">Client Confirmation</span>
+                  <span class="party-state" id="confirmCardClientState" style="color: var(--warning-text);">Pending</span>
+                </div>
+                <div class="party-timestamp" id="confirmCardClientTime">Not yet confirmed</div>
+                <button id="btnActionConfirmClient" class="btn btn-success btn-sm" style="margin-top: 6px;">
+                  Confirm as Client
+                </button>
+              </div>
+
+              <div class="party-confirm-card" id="cardConfirmWorker">
+                <div class="party-confirm-header">
+                  <span class="party-label" id="confirmCardWorkerLabel">Worker Confirmation</span>
+                  <span class="party-state" id="confirmCardWorkerState" style="color: var(--warning-text);">Pending</span>
+                </div>
+                <div class="party-timestamp" id="confirmCardWorkerTime">Not yet confirmed</div>
+                <button id="btnActionConfirmWorker" class="btn btn-success btn-sm" style="margin-top: 6px;">
+                  Confirm as Worker
+                </button>
+              </div>
+            </div>
+
+            <div id="activationPromptBox" style="margin-top: 14px; text-align: center; display: none;">
+              <button id="btnFinalizeActivation" class="btn btn-primary btn-lg" style="width: 100%;">
+                Activate Agreement & Seal Initial Block
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Work & Payment Check-ins -->
+        <div class="work-payment-grid">
+          <!-- Work Check-in -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                Work Check-in
+              </h3>
+            </div>
+            <div class="card-body">
+              <div class="form-group">
+                <label class="form-label" for="inputWorkNote">Progress Note / Milestone Deliverable</label>
+                <textarea id="inputWorkNote" class="form-control" style="min-height: 70px;" placeholder="e.g. Sent first 10 draft layouts for client review"></textarea>
+              </div>
+              <div style="display: flex; justify-content: flex-end;">
+                <button id="btnRecordWorkCheckin" class="btn btn-secondary btn-sm">
+                  Record Work Check-in
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Payment Tracker -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                Payment Tracker
+              </h3>
+            </div>
+            <div class="card-body">
+              <div class="financial-stats">
+                <span>Paid: <strong id="statAmountPaid" style="color: var(--success-text);">₹0</strong></span>
+                <span>Remaining: <strong id="statAmountRemaining" style="color: #38bdf8;">₹4,000</strong></span>
+              </div>
+              <div class="financial-progress-bar">
+                <div id="financialProgressFill" class="financial-progress-fill" style="width: 0%;"></div>
+              </div>
+
+              <div class="form-row" style="margin-top: 12px;">
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" for="inputPaymentAmount">Add Payment (₹)</label>
+                  <input type="number" id="inputPaymentAmount" class="form-control" placeholder="e.g. 2000" min="1">
+                </div>
+                <div class="form-group" style="margin-bottom: 0;">
+                  <label class="form-label" for="inputPaymentNote">Reference / Method</label>
+                  <input type="text" id="inputPaymentNote" class="form-control" placeholder="UPI / Bank transfer">
+                </div>
+              </div>
+              <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
+                <button id="btnRecordPayment" class="btn btn-secondary btn-sm">
+                  Record Payment Update
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SHA-256 Event Chain & Tamper Demo -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <h3 class="card-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                SHA-256 Integrity Chain (<span id="eventCountLabel">0</span> events)
+              </h3>
+              <div style="font-size: 0.75rem; color: var(--text-dim);">
+                Deterministic browser Web Crypto hashes link every state transition.
+              </div>
+            </div>
+
+            <!-- Verification Status & Actions -->
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <div id="integrityStatusBadge" class="integrity-badge verified">
+                <span id="integrityStatusDot">●</span>
+                <span id="integrityStatusText">Verified</span>
+              </div>
+              <button id="btnVerifyChain" class="btn btn-secondary btn-sm" title="Recompute all hashes from genesis">
+                Verify Integrity
+              </button>
+              <button id="btnTamperDemo" class="btn btn-warning btn-sm" title="Tamper with an event payload to demonstrate failure">
+                Tamper Demo
+              </button>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <!-- Event Timeline Container -->
+            <div id="eventTimeline" class="timeline-list">
+              <!-- Event cards injected dynamically -->
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <!-- Create Agreement Modal -->
+  <div id="modalCreateAgreement" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalCreateTitle">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 id="modalCreateTitle" class="modal-title">Create Work Agreement</h3>
+        <button id="btnCloseCreateModal" class="modal-close-btn" aria-label="Close dialog">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Natural Language / Voice Brief Section -->
+        <div class="form-group">
+          <label class="form-label" for="inputSpokenBrief">Spoken or Typed Natural-Language Brief</label>
+          <div class="speech-bar">
+            <button type="button" id="btnToggleSpeech" class="mic-btn" title="Click to speak">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+              <span id="speechBtnText">Dictate Brief</span>
+            </button>
+            <select id="selectSpeechLang" class="speech-lang-select" title="Speech language">
+              <option value="en-IN">English (India)</option>
+              <option value="hi-IN">Hindi (India)</option>
+            </select>
+            <span id="speechFeedbackText" class="speech-status-text">Web Speech API ready. Or type directly below.</span>
+          </div>
+          <textarea id="inputSpokenBrief" class="form-control" rows="3" placeholder="e.g. I’ll design 20 posters for Rahul for ₹4,000 by Friday. Payment after approval."></textarea>
+          
+          <!-- Extracted Suggestions Pills -->
+          <div id="hintsPillContainer" class="hints-container" style="display: none;">
+            <!-- Clickable hint chips -->
+          </div>
+        </div>
+
+        <!-- Missing Terms Live Check Alert in Modal -->
+        <div id="modalMissingTermsBox" class="missing-terms-box" style="margin-bottom: 16px;">
+          <div class="missing-terms-title">
+            <span>Missing / Incomplete Required Fields</span>
+          </div>
+          <div id="modalMissingTermsList" class="missing-terms-list">
+            <!-- Dynamic missing list -->
+          </div>
+        </div>
+
+        <!-- Structured Agreement Form -->
+        <form id="formCreateAgreement">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="formClientName">Client Name *</label>
+              <input type="text" id="formClientName" class="form-control" placeholder="e.g. Rahul Sharma" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="formWorkerName">Worker / Freelancer Name *</label>
+              <input type="text" id="formWorkerName" class="form-control" placeholder="e.g. Aman Verma" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="formDeliverables">Deliverables Description *</label>
+            <textarea id="formDeliverables" class="form-control" rows="2" placeholder="Specific items to be produced or tasks performed..." required></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="formAmount">Agreed Amount (INR ₹) *</label>
+              <input type="number" id="formAmount" class="form-control" placeholder="4000" min="1" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="formDueDate">Target Due Date *</label>
+              <input type="date" id="formDueDate" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="formAcceptanceCriteria">Acceptance Criteria (How work is approved) *</label>
+            <textarea id="formAcceptanceCriteria" class="form-control" rows="2" placeholder="e.g. High resolution 300 DPI exports; 1 revision cycle included; client signs off..." required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="formPaymentTerms">Payment Terms *</label>
+            <input type="text" id="formPaymentTerms" class="form-control" placeholder="e.g. 50% advance, 50% on approval of files" required>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" id="btnCancelCreate" class="btn btn-secondary">Cancel</button>
+        <button type="button" id="btnSubmitAgreement" class="btn btn-primary" disabled>
+          Create Agreement & Calculate Genesis Block
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dedicated Proof File Modal / Printable Screen -->
+  <div id="modalProofFile" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="proofTitle">
+    <div class="modal-dialog" style="max-width: 900px; background: transparent; border: none; box-shadow: none;">
+      
+      <!-- Top Action bar outside printable area -->
+      <div class="no-print" style="display: flex; justify-content: flex-end; gap: 10px; margin-bottom: 16px;">
+        <button id="btnPrintProof" class="btn btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Print / Save as PDF
+        </button>
+        <button id="btnCloseProof" class="btn btn-secondary">Close Proof File</button>
+      </div>
+
+      <!-- Printable Document Container -->
+      <article class="proof-file-container" id="printableProofDocument">
+        <header class="proof-header">
+          <div class="proof-brand">
+            <h1>PAKKA PROOF FILE</h1>
+            <p>Cryptographic Tamper-Evident Record of Informal Agreement</p>
+          </div>
+          <div style="text-align: right;">
+            <div id="proofIntegrityBadge" class="integrity-badge verified" style="margin-bottom: 6px;">
+              <span>●</span> <span id="proofBadgeText">Verified SHA-256 Chain</span>
+            </div>
+            <div style="font-size: 0.75rem; color: #64748b;">Generated: <span id="proofGeneratedDate"></span></div>
+          </div>
+        </header>
+
+        <!-- Explicit Disclaimer in Proof File -->
+        <div class="proof-disclaimer-box">
+          <strong>Notice & Boundary:</strong> This document represents a browser-generated local cryptographic record using SHA-256 event chaining. It verifies that the stored event logs match their sequential hash values. It does <em>not</em> constitute a court judgment, legal contract enforceability guarantee, identity verification, or escrow payment processing.
+        </div>
+
+        <h2 class="proof-section-title">1. Core Agreement Terms</h2>
+        <table class="proof-table">
+          <tbody>
+            <tr>
+              <th style="width: 25%;">Agreement ID</th>
+              <td id="proofAgreementId" style="font-family: var(--font-mono);"></td>
+              <th style="width: 25%;">Status</th>
+              <td id="proofStatus"></td>
+            </tr>
+            <tr>
+              <th>Client</th>
+              <td id="proofClient"></td>
+              <th>Worker / Freelancer</th>
+              <td id="proofWorker"></td>
+            </tr>
+            <tr>
+              <th>Deliverables</th>
+              <td colspan="3" id="proofDeliverables" style="white-space: pre-wrap;"></td>
+            </tr>
+            <tr>
+              <th>Agreed Amount</th>
+              <td id="proofAmount" style="font-weight: 700; color: #0284c7;"></td>
+              <th>Due Date</th>
+              <td id="proofDueDate"></td>
+            </tr>
+            <tr>
+              <th>Acceptance Criteria</th>
+              <td colspan="3" id="proofAcceptance" style="white-space: pre-wrap;"></td>
+            </tr>
+            <tr>
+              <th>Payment Terms</th>
+              <td colspan="3" id="proofPaymentTerms"></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2 class="proof-section-title">2. Financial & Completion Summary</h2>
+        <table class="proof-table">
+          <tbody>
+            <tr>
+              <th style="width: 33%;">Agreed Total</th>
+              <th style="width: 33%;">Amount Paid</th>
+              <th style="width: 34%;">Remaining Balance</th>
+            </tr>
+            <tr>
+              <td id="proofStatTotal" style="font-weight: 700; font-size: 1.1rem;"></td>
+              <td id="proofStatPaid" style="font-weight: 700; font-size: 1.1rem; color: #059669;"></td>
+              <td id="proofStatRemaining" style="font-weight: 700; font-size: 1.1rem; color: #0284c7;"></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2 class="proof-section-title">3. Tamper-Evident Event Log (SHA-256 Audit Trail)</h2>
+        <table class="proof-table" style="font-size: 0.775rem;">
+          <thead>
+            <tr>
+              <th style="width: 6%;">#</th>
+              <th style="width: 18%;">Event Type</th>
+              <th style="width: 14%;">Actor</th>
+              <th style="width: 20%;">Timestamp</th>
+              <th style="width: 42%;">Previous & Block Hash (SHA-256)</th>
+            </tr>
+          </thead>
+          <tbody id="proofEventsTableBody">
+            <!-- Event rows dynamically added -->
+          </tbody>
+        </table>
+
+        <footer style="margin-top: 30px; padding-top: 16px; border-top: 1px solid #cbd5e1; font-size: 0.75rem; color: #64748b; display: flex; justify-content: space-between;">
+          <span>Pakka Integrity Log Engine &bull; Zero backend, zero tracking</span>
+          <span id="proofPageFooterInfo">Page 1 of 1</span>
+        </footer>
+      </article>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
