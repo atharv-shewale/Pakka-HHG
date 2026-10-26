@@ -44,6 +44,51 @@
 
   <!-- Main Content Dashboard -->
   <main class="app-main">
+    <!-- Hero Banner -->
+    <section class="hero-section" aria-label="Hero Overview">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span class="hero-badge-pulse"></span>
+          Wispr Flow &bull; Hacker House Goa Wildcard
+        </div>
+        <h2 class="hero-heading">Turn Spoken Deals into Cryptographically Verified Records</h2>
+        <p class="hero-subtext">
+          Speak or type informal freelance terms. Pakka spots missing criteria, coordinates simulated party confirmations, and links every milestone with a SHA-256 event chain.
+        </p>
+        <div class="hero-tags">
+          <span class="hero-tag">🎙️ Spoken Brief (EN-IN & HI-IN)</span>
+          <span class="hero-tag">🔍 Missing-Terms Guard</span>
+          <span class="hero-tag">🔗 Web Crypto SHA-256</span>
+          <span class="hero-tag">🖨️ Printable Proof File</span>
+          <span class="hero-tag">🛡️ Zero Backend / 100% Local</span>
+        </div>
+      </div>
+      <div class="hero-cta-box">
+        <button id="heroBtnCreate" class="btn btn-primary btn-lg" style="width: 100%;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+          Create New Agreement
+        </button>
+        <div style="font-size: 0.75rem; color: var(--text-dim); text-align: center; margin-top: 8px;">
+          Runs 100% client-side in localStorage &bull; No login required
+        </div>
+      </div>
+    </section>
+
+    <!-- Global System Error Alert (Hidden by default) -->
+    <div id="globalErrorAlert" class="global-error-banner" style="display: none;" role="alert">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 1.2rem;">⚠️</span>
+        <span id="globalErrorMessage">An unexpected error occurred.</span>
+      </div>
+      <button id="btnDismissError" class="btn btn-sm btn-secondary">Dismiss</button>
+    </div>
+
+    <!-- Global Loading Overlay / Indicator -->
+    <div id="globalLoadingState" class="loading-state-container" style="display: none;">
+      <div class="loading-spinner"></div>
+      <span id="loadingMessage" style="font-size: 0.875rem; color: var(--text-muted);">Processing cryptographic chain...</span>
+    </div>
+
     <div class="dashboard-grid">
 
       <!-- Left Sidebar: Agreements List -->

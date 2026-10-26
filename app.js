@@ -1339,6 +1339,17 @@ function setupEventListeners() {
   document.getElementById('btnPrintProof').addEventListener('click', () => window.print());
   document.getElementById('btnExportJson').addEventListener('click', exportAgreementJson);
 
+  // Hero & Global Error actions
+  const heroBtn = document.getElementById('heroBtnCreate');
+  if (heroBtn) heroBtn.addEventListener('click', openCreateAgreementModal);
+
+  const dismissBtn = document.getElementById('btnDismissError');
+  if (dismissBtn) {
+    dismissBtn.addEventListener('click', () => {
+      document.getElementById('globalErrorAlert').style.display = 'none';
+    });
+  }
+
   // Modal creation actions
   document.getElementById('btnCloseCreateModal').addEventListener('click', closeCreateAgreementModal);
   document.getElementById('btnCancelCreate').addEventListener('click', closeCreateAgreementModal);
