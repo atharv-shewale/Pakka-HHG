@@ -366,8 +366,24 @@ const AppState = {
   activeSimulatedRole: 'client', // 'client' or 'worker'
   speechRecognition: null,
   isRecordingSpeech: false,
-  tamperedStateNotice: null
+  tamperedStateNotice: null,
+  editingAgreementId: null,
+  audioCuesEnabled: true
 };
+
+function speakVoiceCue(text) {
+  if (!AppState.audioCuesEnabled || !window.speechSynthesis) return;
+  try {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.05;
+    utterance.pitch = 1.0;
+    utterance.lang = 'en-IN';
+    window.speechSynthesis.speak(utterance);
+  } catch (e) {
+    console.warn('Speech synthesis cue failed:', e);
+  }
+}
 
 function saveState() {
   try {
@@ -612,6 +628,22 @@ async function renderSelectedAgreementWorkspace() {
     missingList.innerHTML = missing.map(m => `<span class="missing-term-pill">⚠️ ${escapeHtml(m)}</span>`).join('');
   } else {
     missingBox.style.display = 'none';
+  }
+
+  // Edit Terms button visibility (Locked once active to avoid silent mutation)
+  const btnEditTerms = document.getElementById('btnEditAgreementTerms');
+  if (btnEditTerms) {
+    if (ag.status === 'draft' || ag.status === 'awaiting_confirmation') {
+      btnEditTerms.style.display = 'inline-flex';
+      btnEditTerms.title = 'Edit draft agreement terms before final activation';
+    } else {
+      btnEditTerms.style.display = 'none';
+    }
+  }
+
+  const btnFixMissing = document.getElementById('btnFixMissingTerms');
+  if (btnFixMissing) {
+    btnFixMissing.onclick = () => openEditAgreementModal(ag.id);
   }
 
   // Persona labels
@@ -1032,9 +1064,38 @@ function exportAgreementJson() {
 // ==========================================
 
 function openCreateAgreementModal() {
+  AppState.editingAgreementId = null;
   const modal = document.getElementById('modalCreateAgreement');
   modal.classList.add('active');
+  document.getElementById('modalCreateTitle').textContent = 'Create Work Agreement';
+  document.getElementById('btnSubmitAgreement').textContent = 'Create Agreement & Calculate Genesis Block';
   resetCreateForm();
+  validateCreateForm();
+}
+
+function openEditAgreementModal(agId) {
+  const ag = AppState.agreements.find(a => a.id === agId);
+  if (!ag) return;
+  if (ag.status === 'active' || ag.status === 'completed' || ag.status === 'disputed') {
+    alert('Locked Agreement: Activated agreements cannot have core terms modified directly. Any updates must be recorded via check-ins or status updates.');
+    return;
+  }
+  AppState.editingAgreementId = ag.id;
+  const modal = document.getElementById('modalCreateAgreement');
+  modal.classList.add('active');
+  document.getElementById('modalCreateTitle').textContent = 'Edit Draft Agreement Terms';
+  document.getElementById('btnSubmitAgreement').textContent = 'Save Changes & Update Genesis Hash';
+
+  document.getElementById('inputSpokenBrief').value = '';
+  document.getElementById('formClientName').value = ag.clientName || '';
+  document.getElementById('formWorkerName').value = ag.workerName || '';
+  document.getElementById('formDeliverables').value = ag.deliverables || '';
+  document.getElementById('formAmount').value = ag.amount || '';
+  document.getElementById('formDueDate').value = ag.dueDate || '';
+  document.getElementById('formAcceptanceCriteria').value = ag.acceptanceCriteria || '';
+  document.getElementById('formPaymentTerms').value = ag.paymentTerms || '';
+  document.getElementById('hintsPillContainer').style.display = 'none';
+
   validateCreateForm();
 }
 
@@ -1199,6 +1260,43 @@ async function handleCreateAgreementSubmit() {
   const acceptanceCriteria = document.getElementById('formAcceptanceCriteria').value.trim();
   const paymentTerms = document.getElementById('formPaymentTerms').value.trim();
 
+  // If editing an existing draft agreement
+  if (AppState.editingAgreementId) {
+    const ag = AppState.agreements.find(a => a.id === AppState.editingAgreementId);
+    if (ag) {
+      ag.clientName = clientName;
+      ag.workerName = workerName;
+      ag.deliverables = deliverables;
+      ag.amount = amount;
+      ag.dueDate = dueDate;
+      ag.acceptanceCriteria = acceptanceCriteria;
+      ag.paymentTerms = paymentTerms;
+      ag.updatedAt = new Date().toISOString();
+
+      // Recalculate genesis and first event hash
+      const genesisHash = await computeGenesisHash(ag.id, ag.createdAt);
+      if (ag.events && ag.events.length > 0) {
+        ag.events[0].payload = {
+          clientName, workerName, amount, currency: 'INR', dueDate, deliverables, acceptanceCriteria, paymentTerms
+        };
+        ag.events[0].prevHash = genesisHash;
+        ag.events[0].hash = await computeEventHash(ag.events[0]);
+
+        // Re-link any subsequent events
+        for (let i = 1; i < ag.events.length; i++) {
+          ag.events[i].prevHash = ag.events[i - 1].hash;
+          ag.events[i].hash = await computeEventHash(ag.events[i]);
+        }
+      }
+      AppState.editingAgreementId = null;
+      saveState();
+      closeCreateAgreementModal();
+      speakVoiceCue('Draft terms updated and re-hashed.');
+      await renderAll();
+      return;
+    }
+  }
+
   const id = `ag_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
   const now = new Date().toISOString();
 
@@ -1294,6 +1392,29 @@ function setupEventListeners() {
     }
   });
 
+  // Voice Cues Toggle
+  const btnToggleAudio = document.getElementById('btnToggleAudio');
+  if (btnToggleAudio) {
+    btnToggleAudio.addEventListener('click', () => {
+      AppState.audioCuesEnabled = !AppState.audioCuesEnabled;
+      const icon = document.getElementById('audioStatusIcon');
+      if (icon) icon.textContent = AppState.audioCuesEnabled ? '🔊' : '🔇';
+      if (AppState.audioCuesEnabled) {
+        speakVoiceCue('Voice cues enabled.');
+      }
+    });
+  }
+
+  // Edit Agreement Terms action
+  const btnEditTerms = document.getElementById('btnEditAgreementTerms');
+  if (btnEditTerms) {
+    btnEditTerms.addEventListener('click', () => {
+      if (AppState.selectedAgreementId) {
+        openEditAgreementModal(AppState.selectedAgreementId);
+      }
+    });
+  }
+
   // Role Switcher
   document.getElementById('roleBtnClient').addEventListener('click', () => {
     AppState.activeSimulatedRole = 'client';
@@ -1321,15 +1442,20 @@ function setupEventListeners() {
     if (ag) {
       const res = await verifyAgreementIntegrity(ag);
       if (res.isValid) {
+        speakVoiceCue('Agreement verified. SHA-256 chain intact.');
         alert('🟢 INTEGRITY VERIFICATION SUCCEEDED\n\nAll SHA-256 event digests and previous-hash links were recomputed and match the stored chain perfectly.');
       } else {
+        speakVoiceCue('Warning: Tampering detected. Hash chain mismatch.');
         alert(`🔴 INTEGRITY VERIFICATION FAILED\n\n${res.reason}`);
       }
       await renderAll();
     }
   });
 
-  document.getElementById('btnTamperDemo').addEventListener('click', handleTamperDemo);
+  document.getElementById('btnTamperDemo').addEventListener('click', async () => {
+    speakVoiceCue('Tamper simulation executed.');
+    await handleTamperDemo();
+  });
 
   // Proof File & Print actions
   document.getElementById('btnOpenProofFile').addEventListener('click', openProofFileModal);

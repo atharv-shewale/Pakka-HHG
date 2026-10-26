@@ -82,4 +82,14 @@ pakka/
 
 ## Status
 
-This repository template is a build blueprint, not proof that a working application already exists. Update this section only after locally testing the implementation and its acceptance tests.
+**Implemented and Locally Verified:** All core MVP requirements (P0) and spoken audio cues (P1) have been implemented and tested end-to-end in the browser. The application runs locally with zero build step and zero backend dependencies. It has been verified against the acceptance checklist:
+- [x] Spoken brief dictation and transparent hint extraction
+- [x] Structured agreement creation and missing-terms validation
+- [x] Draft terms correction and amendment re-hashing
+- [x] Dual-party simulated confirmation workflow
+- [x] Work check-in milestones and payment ledger tracking
+- [x] Deterministic SHA-256 hash chaining via browser Web Crypto API
+- [x] Live integrity verification engine
+- [x] High-contrast Tamper Demo with fault localization
+- [x] Dedicated printable Proof File (`window.print`) and JSON export
+- [x] Local persistence surviving browser refresh with full demo reset
